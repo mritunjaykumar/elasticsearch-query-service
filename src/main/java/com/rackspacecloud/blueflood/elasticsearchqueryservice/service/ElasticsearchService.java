@@ -5,11 +5,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.domain.ElasticsearchRestQueryModel;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.model.MetricsSearchResult;
+import com.rackspacecloud.blueflood.elasticsearchqueryservice.utils.GlobPattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
@@ -21,7 +21,7 @@ import java.util.List;
 
 @Service
 public class ElasticsearchService implements IElasticsearchService {
-    @Value("${ELASTICSEARCH_ROOT_URL}")
+    @Value("${elasticsearch.root.url}")
     private String elasticsearchRootUrl;
 
     private final int MAX_SIZE = 10000;
@@ -31,7 +31,17 @@ public class ElasticsearchService implements IElasticsearchService {
 
     @Override
     public List<MetricsSearchResult> fetch(String tenantId, String queryString) throws Exception {
-        ElasticsearchRestQueryModel queryModel = new ElasticsearchRestQueryModel(tenantId, queryString);
+        GlobPattern pattern = new GlobPattern(queryString);
+
+        ElasticsearchRestQueryModel queryModel;
+
+        if(pattern.hasWildcard()){
+            String compiledString = pattern.compiled().toString();
+            queryModel = new ElasticsearchRestQueryModel(tenantId, compiledString, true);
+        }
+        else{
+            queryModel = new ElasticsearchRestQueryModel(tenantId, queryString, false);
+        }
 
         ObjectMapper mapper = new ObjectMapper();
 

@@ -9,12 +9,19 @@ public class ElasticsearchRestQueryModel {
     @JsonProperty(value = "query")
     public QueryNode queryNode;
 
-    public ElasticsearchRestQueryModel(String tenantId, String queryString){
+    public ElasticsearchRestQueryModel(String tenantId, String queryString, boolean queryHasWildCard){
         TenantIdTermNode tenantIdTermNode = new TenantIdTermNode(tenantId);
+        MustNode mustNode = new MustNode(tenantIdTermNode);
         MetricNameTermNode metricNameTermNode = new MetricNameTermNode(queryString);
 
-        MustNode mustNode = new MustNode(tenantIdTermNode);
-        ShouldNode shouldNode = new ShouldNode(metricNameTermNode);
+        ShouldNode shouldNode;
+
+        if(queryHasWildCard) {
+            shouldNode = new RegexpShouldNode(metricNameTermNode);
+        }
+        else {
+            shouldNode = new TermShouldNode(metricNameTermNode);
+        }
 
         BoolNode boolNode = new BoolNode(mustNode, shouldNode);
         this.queryNode = new QueryNode(boolNode);
@@ -57,8 +64,19 @@ public class ElasticsearchRestQueryModel {
         public TermNode termNode;
     }
 
-    public class ShouldNode {
-        public ShouldNode(TermNode termNode){
+    public class ShouldNode { }
+
+    public class RegexpShouldNode extends ShouldNode {
+        public RegexpShouldNode(TermNode termNode){
+            this.termNode = termNode;
+        }
+
+        @JsonProperty(value = "regexp")
+        public TermNode termNode;
+    }
+
+    public class TermShouldNode extends ShouldNode {
+        public TermShouldNode(TermNode termNode){
             this.termNode = termNode;
         }
 
@@ -66,9 +84,7 @@ public class ElasticsearchRestQueryModel {
         public TermNode termNode;
     }
 
-    public abstract class TermNode {
-
-    }
+    public abstract class TermNode { }
 
     public class TenantIdTermNode extends TermNode {
         public TenantIdTermNode(String tenantId){ this.tenantId = tenantId; }
