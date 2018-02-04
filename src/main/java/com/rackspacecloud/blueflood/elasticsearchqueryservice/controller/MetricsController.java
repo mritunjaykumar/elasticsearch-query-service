@@ -1,5 +1,6 @@
 package com.rackspacecloud.blueflood.elasticsearchqueryservice.controller;
 
+import com.rackspacecloud.blueflood.elasticsearchqueryservice.model.EventsSearchResult;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.model.MetricsSearchResult;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.service.ElasticsearchService;
 import org.slf4j.Logger;
@@ -21,8 +22,7 @@ public class MetricsController {
 
     @RequestMapping(
             value = "{tenantId}/metrics/search",
-            method = RequestMethod.GET,
-            consumes = MediaType.APPLICATION_JSON_VALUE
+            method = RequestMethod.GET
     )
     public List<MetricsSearchResult> fetch(
             @PathVariable(value = "tenantId") final String tenantId,
@@ -45,10 +45,9 @@ public class MetricsController {
 
     @RequestMapping(
             value = "{tenantId}/events/getEvents",
-            method = RequestMethod.GET//,
-            //consumes = MediaType.APPLICATION_JSON_VALUE
+            method = RequestMethod.GET
     )
-    public List<MetricsSearchResult> fetchEvents(
+    public List<EventsSearchResult> fetchEvents(
             @PathVariable(value = "tenantId") final String tenantId,
             @RequestParam(value = "from") final long from,
             @RequestParam(value = "until") final long until){
@@ -56,9 +55,10 @@ public class MetricsController {
             return elasticsearchService.fetchEvents(tenantId, from, until);
         }
         catch (Exception ex){
-            return new ArrayList<>();
+            LOGGER.error(ex.getMessage());
+            // TODO: Handle this in GlobalHandler?
         }
-
+        return new ArrayList<>();
     }
 }
 

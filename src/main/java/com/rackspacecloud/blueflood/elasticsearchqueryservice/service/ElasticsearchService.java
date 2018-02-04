@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.domain.EventsQueryModel;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.domain.MetricsQueryModel;
+import com.rackspacecloud.blueflood.elasticsearchqueryservice.model.EventsSearchResult;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.model.MetricsSearchResult;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.utils.GlobPattern;
 import org.slf4j.Logger;
@@ -101,7 +102,7 @@ public class ElasticsearchService implements IElasticsearchService {
     }
 
     @Override
-    public List<MetricsSearchResult> fetchEvents(String tenantId, long from, long until) throws Exception {
+    public List<EventsSearchResult> fetchEvents(String tenantId, long from, long until) throws Exception {
         String logMethodName = "ElasticsearchService.fetchEvents";
         LOGGER.info("{}: received tenantId = '{}' and from = '{}' until = '{}'", logMethodName, tenantId, from, until);
 
@@ -114,7 +115,32 @@ public class ElasticsearchService implements IElasticsearchService {
         String response = restTemplate.exchange(url, HttpMethod.POST, request, String.class).getBody();
         LOGGER.debug("{}: elasticsearch response = '{}'", logMethodName, response);
 
-        return getSearchResults(response);
+        return getEventsSearchResults(response);
+    }
+
+    private List<EventsSearchResult> getEventsSearchResults(String response) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(response);
+
+        Iterator<JsonNode> iter = root.get("hits").get("hits").elements();
+
+        List<EventsSearchResult> searchResults = new ArrayList<>();
+        while(iter.hasNext()){
+            JsonNode source = iter.next().get("_source");
+            String what = source.get("what").asText();
+            String when = source.get("when").asText();
+            String tenantId = source.get("tenantId").asText();
+
+            String tags = null;
+            if(source.has("tags")) tags = source.get("tags").asText();
+
+            String data = null;
+            if(source.has("data")) data = source.get("data").asText();
+
+            EventsSearchResult result = new EventsSearchResult(what, when, tags, tenantId, data);
+            searchResults.add(result);
+        }
+        return searchResults;
     }
 
     private String getEventsQueryPayload(String tenantId, long from, long until) throws Exception {
