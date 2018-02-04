@@ -5,5 +5,6 @@ import com.rackspacecloud.blueflood.elasticsearchqueryservice.model.MetricsSearc
 import java.util.List;
 
 public interface IElasticsearchService {
-    List<MetricsSearchResult> fetch(String tenantId, String queryString) throws Exception;
+    List<MetricsSearchResult> fetchMetrics(String tenantId, String queryString) throws Exception;
+    List<MetricsSearchResult> fetchEvents(String tenantId, long from, long until) throws Exception;
 }

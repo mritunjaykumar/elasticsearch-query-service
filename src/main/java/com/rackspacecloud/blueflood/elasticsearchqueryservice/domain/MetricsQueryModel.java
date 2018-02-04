@@ -5,11 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ElasticsearchRestQueryModel {
+public class MetricsQueryModel {
     @JsonProperty(value = "query")
     public QueryNode queryNode;
 
-    public ElasticsearchRestQueryModel(String tenantId, String queryString, boolean queryHasWildCard){
+    public MetricsQueryModel(String tenantId, String queryString, boolean queryHasWildCard){
         TenantIdTermNode tenantIdTermNode = new TenantIdTermNode(tenantId);
         MustNode mustNode = new MustNode(tenantIdTermNode);
         MetricNameTermNode metricNameTermNode = new MetricNameTermNode(queryString);

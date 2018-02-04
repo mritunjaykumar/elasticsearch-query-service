@@ -33,7 +33,7 @@ public class MetricsController {
         //TODO: validate queryString
 
         try {
-            return elasticsearchService.fetch(tenantId, queryString);
+            return elasticsearchService.fetchMetrics(tenantId, queryString);
         }
         catch(Exception ex){
             LOGGER.error(ex.getMessage());
@@ -44,16 +44,16 @@ public class MetricsController {
     }
 
     @RequestMapping(
-            value = "tenantId}/events/getEvents",
-            method = RequestMethod.GET,
-            consumes = MediaType.APPLICATION_JSON_VALUE
+            value = "{tenantId}/events/getEvents",
+            method = RequestMethod.GET//,
+            //consumes = MediaType.APPLICATION_JSON_VALUE
     )
-    public List<MetricsSearchResult> fetchEvent(
+    public List<MetricsSearchResult> fetchEvents(
             @PathVariable(value = "tenantId") final String tenantId,
             @RequestParam(value = "from") final long from,
             @RequestParam(value = "until") final long until){
         try {
-            return elasticsearchService.fetchEvent(tenantId, from, until);
+            return elasticsearchService.fetchEvents(tenantId, from, until);
         }
         catch (Exception ex){
             return new ArrayList<>();

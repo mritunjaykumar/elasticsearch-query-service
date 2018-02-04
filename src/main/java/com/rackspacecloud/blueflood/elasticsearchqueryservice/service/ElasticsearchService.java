@@ -3,7 +3,8 @@ package com.rackspacecloud.blueflood.elasticsearchqueryservice.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rackspacecloud.blueflood.elasticsearchqueryservice.domain.ElasticsearchRestQueryModel;
+import com.rackspacecloud.blueflood.elasticsearchqueryservice.domain.EventsQueryModel;
+import com.rackspacecloud.blueflood.elasticsearchqueryservice.domain.MetricsQueryModel;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.model.MetricsSearchResult;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.utils.GlobPattern;
 import org.slf4j.Logger;
@@ -34,19 +35,33 @@ public class ElasticsearchService implements IElasticsearchService {
     RestTemplate restTemplate;
 
     @Override
-    public List<MetricsSearchResult> fetch(String tenantId, String queryString) throws Exception {
-        LOGGER.info("ElasticsearchService: received tenantId = '{}' and query= '{}'", tenantId, queryString);
+    public List<MetricsSearchResult> fetchMetrics(String tenantId, String queryString) throws Exception {
+        String logMethodName = "ElasticsearchService.fetchMetrics";
+        LOGGER.info("{}: received tenantId = '{}' and query= '{}'", logMethodName, tenantId, queryString);
 
+        String payload = getMetricsQueryPayload(tenantId, queryString);
+
+        HttpEntity<String> request = new HttpEntity<>(payload);
+        String url = String.format("%s/metric_metadata/_search?size=%d", elasticsearchRootUrl, MAX_SIZE);
+
+        LOGGER.debug("{}: url = '{}' and payload = '{}'", logMethodName, url, payload);
+        String response = restTemplate.exchange(url, HttpMethod.POST, request, String.class).getBody();
+        LOGGER.debug("{}: elasticsearch response = '{}'", logMethodName, response);
+
+        return getSearchResults(response);
+    }
+
+    private String getMetricsQueryPayload(String tenantId, String queryString) throws Exception {
         GlobPattern pattern = new GlobPattern(queryString);
 
-        ElasticsearchRestQueryModel queryModel;
+        MetricsQueryModel queryModel;
 
         if(pattern.hasWildcard()){
             String compiledString = pattern.compiled().toString();
-            queryModel = new ElasticsearchRestQueryModel(tenantId, compiledString, true);
+            queryModel = new MetricsQueryModel(tenantId, compiledString, true);
         }
         else{
-            queryModel = new ElasticsearchRestQueryModel(tenantId, queryString, false);
+            queryModel = new MetricsQueryModel(tenantId, queryString, false);
         }
 
         ObjectMapper mapper = new ObjectMapper();
@@ -62,16 +77,7 @@ public class ElasticsearchService implements IElasticsearchService {
         if(StringUtils.isEmpty(payload)) {
             throw new Exception("Payload to ES is blank.");
         }
-
-        HttpEntity<String> request = new HttpEntity<>(payload);
-
-        String url = String.format("%s/metric_metadata/_search?size=%d", elasticsearchRootUrl, MAX_SIZE);
-
-        LOGGER.debug("ElasticsearchService: url = '{}' and payload = '{}'", url, payload);
-        String response = restTemplate.exchange(url, HttpMethod.POST, request, String.class).getBody();
-        LOGGER.debug("ElasticsearchService: elasticsearch response = '{}'", response);
-
-        return getSearchResults(response);
+        return payload;
     }
 
     private List<MetricsSearchResult> getSearchResults(String response) throws IOException {
@@ -94,9 +100,39 @@ public class ElasticsearchService implements IElasticsearchService {
         return searchResults;
     }
 
+    @Override
+    public List<MetricsSearchResult> fetchEvents(String tenantId, long from, long until) throws Exception {
+        String logMethodName = "ElasticsearchService.fetchEvents";
+        LOGGER.info("{}: received tenantId = '{}' and from = '{}' until = '{}'", logMethodName, tenantId, from, until);
 
-    public List<MetricsSearchResult>fetchEvent(String tenantId, long from, long until){
-        return ;
+        String payload = getEventsQueryPayload(tenantId, from, until);
 
+        HttpEntity<String> request = new HttpEntity<>(payload);
+        String url = String.format("%s/events/_search?size=%d", elasticsearchRootUrl, MAX_SIZE);
+
+        LOGGER.debug("{}: url = '{}' and payload = '{}'", logMethodName, url, payload);
+        String response = restTemplate.exchange(url, HttpMethod.POST, request, String.class).getBody();
+        LOGGER.debug("{}: elasticsearch response = '{}'", logMethodName, response);
+
+        return getSearchResults(response);
+    }
+
+    private String getEventsQueryPayload(String tenantId, long from, long until) throws Exception {
+        EventsQueryModel queryModel = new EventsQueryModel(tenantId, from, until);
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        String payload = "";
+        try {
+            payload = mapper.writeValueAsString(queryModel);
+        }
+        catch (JsonProcessingException ex){
+            System.out.println(ex.getMessage());
+        }
+
+        if(StringUtils.isEmpty(payload)) {
+            throw new Exception("Payload to ES is blank.");
+        }
+        return payload;
     }
 }
