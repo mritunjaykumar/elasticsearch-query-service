@@ -85,4 +85,10 @@ public class ElasticsearchService implements IElasticsearchService {
         }
         return searchResults;
     }
+
+
+    public List<MetricsSearchResult>fetchEvent(String tenantId, long from, long until){
+        return ;
+
+    }
 }

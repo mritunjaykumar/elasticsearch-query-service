@@ -35,6 +35,24 @@ public class MetricsController {
 
         return new ArrayList<>();
     }
+
+    @RequestMapping(
+            value = "tenantId}/events/getEvents",
+            method = RequestMethod.GET,
+            consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    public List<MetricsSearchResult> fetchEvent(
+            @PathVariable(value = "tenantId") final String tenantId,
+            @RequestParam(value = "from") final long from,
+            @RequestParam(value = "until") final long until){
+        try {
+            return elasticsearchService.fetchEvent(tenantId, from, until);
+        }
+        catch (Exception ex){
+            return new ArrayList<>();
+        }
+
+    }
 }
 
 /*
