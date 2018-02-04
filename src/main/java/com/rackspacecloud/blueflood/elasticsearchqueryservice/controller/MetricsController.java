@@ -2,6 +2,8 @@ package com.rackspacecloud.blueflood.elasticsearchqueryservice.controller;
 
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.model.MetricsSearchResult;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.service.ElasticsearchService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,8 @@ public class MetricsController {
     @Autowired
     ElasticsearchService elasticsearchService;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MetricsController.class);
+
     @RequestMapping(
             value = "{tenantId}/metrics/search",
             method = RequestMethod.GET,
@@ -24,12 +28,15 @@ public class MetricsController {
             @PathVariable(value = "tenantId") final String tenantId,
             @RequestParam(value = "query") final String queryString)
     {
+        LOGGER.info("MetricsController: Received tenantId = '{}' and query= '{}'", tenantId, queryString);
+
         //TODO: validate queryString
 
         try {
             return elasticsearchService.fetch(tenantId, queryString);
         }
         catch(Exception ex){
+            LOGGER.error(ex.getMessage());
             // TODO: Handle this in GlobalHandler?
         }
 
