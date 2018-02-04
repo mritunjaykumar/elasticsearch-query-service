@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.domain.ElasticsearchRestQueryModel;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.model.MetricsSearchResult;
 import com.rackspacecloud.blueflood.elasticsearchqueryservice.utils.GlobPattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -24,6 +26,8 @@ public class ElasticsearchService implements IElasticsearchService {
     @Value("${elasticsearch.root.url}")
     private String elasticsearchRootUrl;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchService.class);
+
     private final int MAX_SIZE = 10000;
 
     @Autowired
@@ -31,6 +35,8 @@ public class ElasticsearchService implements IElasticsearchService {
 
     @Override
     public List<MetricsSearchResult> fetch(String tenantId, String queryString) throws Exception {
+        LOGGER.info("ElasticsearchService: received tenantId = '{}' and query= '{}'", tenantId, queryString);
+
         GlobPattern pattern = new GlobPattern(queryString);
 
         ElasticsearchRestQueryModel queryModel;
@@ -61,7 +67,9 @@ public class ElasticsearchService implements IElasticsearchService {
 
         String url = String.format("%s/metric_metadata/_search?size=%d", elasticsearchRootUrl, MAX_SIZE);
 
+        LOGGER.debug("ElasticsearchService: url = '{}' and payload = '{}'", url, payload);
         String response = restTemplate.exchange(url, HttpMethod.POST, request, String.class).getBody();
+        LOGGER.debug("ElasticsearchService: elasticsearch response = '{}'", response);
 
         return getSearchResults(response);
     }
