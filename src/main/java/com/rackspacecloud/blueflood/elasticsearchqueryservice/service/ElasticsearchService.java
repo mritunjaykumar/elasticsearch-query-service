@@ -25,7 +25,7 @@ import java.util.List;
 
 @Service
 public class ElasticsearchService implements IElasticsearchService {
-    @Value("${elasticsearch.root.url}")
+    @Value("${elasticsearch.url}")
     private String elasticsearchRootUrl;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchService.class);

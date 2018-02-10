@@ -6,11 +6,12 @@ import com.rackspacecloud.blueflood.elasticsearchqueryservice.service.Elasticsea
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RequestMapping("/v3")
 @RestController
@@ -28,19 +29,31 @@ public class MetricsController {
             @PathVariable(value = "tenantId") final String tenantId,
             @RequestParam(value = "query") final String queryString)
     {
-        LOGGER.info("MetricsController: Received tenantId = '{}' and query= '{}'", tenantId, queryString);
+        //TODO: Get tracking ID from the record to stitch the tracing
+        String passedTrackingId = "";
+        String currentTrackingId = "";
+
+        currentTrackingId = StringUtils.isEmpty(passedTrackingId)
+                ? UUID.randomUUID().toString() : String.format("%s|%s", passedTrackingId, currentTrackingId);
+
+        String requestVars = String.format("tenantId:[%s], query:[%s]", tenantId, queryString);
+
+        LOGGER.info("TrackingId:{}, START: Processing", currentTrackingId);
+        LOGGER.debug("TrackingId:{}, Request variables:{}", currentTrackingId, requestVars);
 
         //TODO: validate queryString
 
+        List<MetricsSearchResult> result = new ArrayList<>();
         try {
-            return elasticsearchService.fetchMetrics(tenantId, queryString);
+            result = elasticsearchService.fetchMetrics(tenantId, queryString);
         }
         catch(Exception ex){
-            LOGGER.error(ex.getMessage());
+            LOGGER.error("TrackingId:{}, Exception message:{}", currentTrackingId, ex.getMessage());
             // TODO: Handle this in GlobalHandler?
         }
 
-        return new ArrayList<>();
+        LOGGER.info("TrackingId:{}, FINISH: Processing", currentTrackingId);
+        return result;
     }
 
     @RequestMapping(
